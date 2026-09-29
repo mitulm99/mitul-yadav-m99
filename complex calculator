@@ -1,0 +1,80 @@
+import tkinter as tk
+import cmath
+import math
+
+
+class ComplexCalculator:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Complex Calculator")
+        self.root.resizable(False, False)
+        self.expression = tk.StringVar()
+
+        display = tk.Entry(root, textvariable=self.expression, font=("Consolas", 20),
+                           justify="right", width=24, bd=8, relief="sunken")
+        display.grid(row=0, column=0, columnspan=6, padx=8, pady=8)
+        display.focus_set()
+
+        buttons = [
+            ("C", 1, 0), ("⌫", 1, 1), ("(", 1, 2), (")", 1, 3), ("i", 1, 4), ("/", 1, 5),
+            ("7", 2, 0), ("8", 2, 1), ("9", 2, 2), ("+", 2, 3), ("abs", 2, 4), ("*", 2, 5),
+            ("4", 3, 0), ("5", 3, 1), ("6", 3, 2), ("-", 3, 3), ("real", 3, 4), ("^", 3, 5),
+            ("1", 4, 0), ("2", 4, 1), ("3", 4, 2), ("=", 4, 3), ("imag", 4, 4), ("j", 4, 5),
+            ("0", 5, 0), (".", 5, 1), ("pi", 5, 2), ("sqrt", 5, 3), ("conj", 5, 4), ("polar", 5, 5),
+        ]
+        for text, row, column in buttons:
+            tk.Button(root, text=text, width=7, height=2, font=("Arial", 11),
+                      command=lambda value=text: self.press(value)).grid(
+                          row=row, column=column, padx=2, pady=2)
+        root.bind("<Return>", lambda event: self.press("="))
+
+    def press(self, value):
+        if value == "C":
+            self.expression.set("")
+        elif value == "⌫":
+            self.expression.set(self.expression.get()[:-1])
+        elif value == "=":
+            self.calculate()
+        else:
+            replacements = {"i": "j", "pi": "pi", "^": "**"}
+            self.expression.set(self.expression.get() + replacements.get(value, value))
+
+    def calculate(self):
+        try:
+            text = self.expression.get().replace("abs", "abs(")
+            # Function buttons are convenient postfix operations: real(2+3j), etc.
+            if text.endswith("sqrt"):
+                text = "sqrt(" + text[:-4] + ")"
+            elif text.endswith("conj"):
+                text = "conj(" + text[:-4] + ")"
+            elif text.endswith("polar"):
+                text = "polar(" + text[:-5] + ")"
+            value = eval(text, {"__builtins__": {}}, {
+                "j": 1j, "pi": math.pi, "sqrt": cmath.sqrt,
+                "abs": abs, "real": lambda z: complex(z).real,
+                "imag": lambda z: complex(z).imag,
+                "conj": lambda z: complex(z).conjugate(),
+                "polar": lambda z: cmath.polar(complex(z)),
+            })
+            self.expression.set(self.format_value(value))
+        except Exception:
+            self.expression.set("Error")
+
+    @staticmethod
+    def format_value(value):
+        if isinstance(value, tuple):
+            return "(" + ", ".join(ComplexCalculator.format_value(v) for v in value) + ")"
+        if isinstance(value, complex):
+            real, imaginary = value.real, value.imag
+            if abs(real) < 1e-10: real = 0
+            if abs(imaginary) < 1e-10: imaginary = 0
+            if imaginary == 0: return str(round(real, 10))
+            if real == 0: return f"{round(imaginary, 10)}i"
+            return f"{round(real, 10)} {'+' if imaginary >= 0 else '-'} {abs(round(imaginary, 10))}i"
+        return str(round(value, 10)) if isinstance(value, float) else str(value)
+
+
+if __name__ == "__main__":
+    app = tk.Tk()
+    ComplexCalculator(app)
+    app.mainloop()
