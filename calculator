@@ -1,0 +1,38 @@
+"""A simple command-line calculator."""
+
+
+def calculate(left, operator, right):
+	if operator == "+":
+		return left + right
+	if operator == "-":
+		return left - right
+	if operator == "*":
+		return left * right
+	if operator == "/":
+		if right == 0:
+			raise ZeroDivisionError("cannot divide by zero")
+		return left / right
+	raise ValueError("unsupported operator")
+
+
+def main():
+	print("Calculator (type 'q' to quit)")
+	while True:
+		expression = input("> ").strip()
+		if expression.lower() == "q":
+			break
+
+		parts = expression.split()
+		if len(parts) != 3:
+			print("Use: number operator number (for example: 2 + 3)")
+			continue
+
+		try:
+			result = calculate(float(parts[0]), parts[1], float(parts[2]))
+			print(result)
+		except (ValueError, ZeroDivisionError):
+			print("Invalid calculation")
+
+
+if __name__ == "__main__":
+	main()
